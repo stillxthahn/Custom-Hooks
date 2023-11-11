@@ -6,15 +6,20 @@ import { sortPlacesByDistance } from "../loc.js";
 import { fetchAvailablePlaces } from "../http.js";
 import useFetch from "../hooks/useFetch.js";
 
-navigator.geolocation.getCurrentPosition((position) => {
-  const sortedPlaces = sortPlacesByDistance(
-    places,
-    position.coords.latitude,
-    position.coords.longitude
-  );
-  setAvailablePlaces(sortedPlaces);
-  setIsFetching(false);
-});
+//5. Creating Flexible Custom Hooks
+async function fetchedSortedPlaces() {
+  const places = await fetchAvailablePlaces();
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const sortedPlaces = sortPlacesByDistance(
+        places,
+        position.coords.latitude,
+        position.coords.longitude
+      );
+      resolve(sortedPlaces);
+    });
+  });
+}
 
 export default function AvailablePlaces({ onSelectPlace }) {
   // 4. Using A Custom Hook in Multiple Components
@@ -22,8 +27,7 @@ export default function AvailablePlaces({ onSelectPlace }) {
     isFetching,
     error,
     fetchedData: availablePlaces,
-    setFetchedData: setAvailablePlaces,
-  } = useFetch(fetchAvailablePlaces, []);
+  } = useFetch(fetchedSortedPlaces, []);
 
   if (error) {
     return <Error title="An error occurred!" message={error.message} />;
